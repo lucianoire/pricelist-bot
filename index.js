@@ -18,7 +18,6 @@ const client = new Client({
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// 🔥 style (no line sa title, line sa end lang)
 function buildMessage(title, body, footer) {
   const components = [
     new TextDisplayBuilder().setContent(title),
@@ -27,11 +26,12 @@ function buildMessage(title, body, footer) {
 
   if (footer) {
     components.push(
+      new TextDisplayBuilder().setContent(footer),
+
+      // line AFTER xoxo / footer
       new SeparatorBuilder()
         .setDivider(true)
-        .setSpacing(SeparatorSpacingSize.Small),
-
-      new TextDisplayBuilder().setContent(footer)
+        .setSpacing(SeparatorSpacingSize.Small)
     );
   }
 
@@ -44,7 +44,10 @@ function buildMessage(title, body, footer) {
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
-  // 🔥 IMPORTANT: use GUILD ONLY para walang duplicate
+  // delete global commands para mawala duplicate /pl
+  await client.application.commands.set([]);
+
+  // register guild-only /pl
   await client.application.commands.set([
     new SlashCommandBuilder()
       .setName("pl")
@@ -52,7 +55,7 @@ client.once("ready", async () => {
       .toJSON()
   ], process.env.GUILD_ID);
 
-  console.log("Command /pl registered (guild only).");
+  console.log("Command /pl fixed.");
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -71,7 +74,6 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     await interaction.deleteReply();
-
   } catch (error) {
     console.error(error);
 
