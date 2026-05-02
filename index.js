@@ -1,267 +1,86 @@
 require("dotenv").config();
 
-const { Client, GatewayIntentBits } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  MessageFlags,
+  TextDisplayBuilder,
+  SeparatorBuilder,
+  SeparatorSpacingSize,
+  SlashCommandBuilder,
+  REST,
+  Routes
+} = require("discord.js");
+
+const { pricelists } = require("./pricelists");
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: [GatewayIntentBits.Guilds]
 });
 
-const PREFIX = ",";
-const OWNER_ID = "1330573713346920533";
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const prices = {
-  p1: [
-    // _ _
-_ _             ׂ  <a:000_1:1456193161113374951>   𓈒  ** bobαks vıα gp** ⁺    ۪ ׂ
-_ _
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _        <:pearl:1483100606649602159>__**covered tαx**__
+function build(title, body, footer) {
+  const components = [
+    new TextDisplayBuilder().setContent(title),
+    new SeparatorBuilder()
+      .setDivider(true)
+      .setSpacing(SeparatorSpacingSize.Small),
+    new TextDisplayBuilder().setContent(body)
+  ];
 
-_ _ _ _ _ _ _ _ _ _     `  ₱60  `  <:pearl:1483100606649602159>  `  100  `
-_ _ _ _ _ _ _ _ _ _     `  ₱100 `  <:pearl:1483100606649602159>  `  200  `
-_ _ _ _ _ _ _ _ _ _     `  ₱150 `  <:pearl:1483100606649602159>  `  300  `
-_ _ _ _ _ _ _ _ _ _     `  ₱185 `  <:pearl:1483100606649602159>  `  400  `
-_ _ _ _ _ _ _ _ _ _     `  ₱205 `  <:pearl:1483100606649602159>  `  500  `
-_ _ _ _ _ _ _ _ _ _     `  ₱245 `  <:pearl:1483100606649602159>  `  600  `
-_ _ _ _ _ _ _ _ _ _     `  ₱280 `  <:pearl:1483100606649602159>  `  700  `
-_ _ _ _ _ _ _ _ _ _     `  ₱325 `  <:pearl:1483100606649602159>  `  800  `
-_ _ _ _ _ _ _ _ _ _     `  ₱350 `  <:pearl:1483100606649602159>  `  900  `
-_ _ _ _ _ _ _ _ _ _     `  ₱385 `  <:pearl:1483100606649602159>  `  1000 `
+  if (footer) {
+    components.push(
+      new SeparatorBuilder()
+        .setDivider(true)
+        .setSpacing(SeparatorSpacingSize.Small),
+      new TextDisplayBuilder().setContent(footer)
+    );
+  }
 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _   <:pearl:1483100606649602159>__**non covered tαx**__
+  return {
+    flags: MessageFlags.IsComponentsV2,
+    components
+  };
+}
 
-_ _ _ _ _ _ _ _ _ _     `  ₱50  `  <:pearl:1483100606649602159>  `  100  `
-_ _ _ _ _ _ _ _ _ _     `  ₱65  `  <:pearl:1483100606649602159>  `  200  `
-_ _ _ _ _ _ _ _ _ _     `  ₱110 `  <:pearl:1483100606649602159>  `  300  `
-_ _ _ _ _ _ _ _ _ _     `  ₱143 `  <:pearl:1483100606649602159>  `  400  `
-_ _ _ _ _ _ _ _ _ _     `  ₱158 `  <:pearl:1483100606649602159>  `  500  `
-_ _ _ _ _ _ _ _ _ _     `  ₱178 `  <:pearl:1483100606649602159>  `  600  `
-_ _ _ _ _ _ _ _ _ _     `  ₱205 `  <:pearl:1483100606649602159>  `  700  `
-_ _ _ _ _ _ _ _ _ _     `  ₱243 `  <:pearl:1483100606649602159>  `  800  `
-_ _ _ _ _ _ _ _ _ _     `  ₱268 `  <:pearl:1483100606649602159>  `  900  `
-_ _ _ _ _ _ _ _ _ _     `  ₱290 `  <:pearl:1483100606649602159>  `  1000 `
+const commands = [
+  new SlashCommandBuilder()
+    .setName("p")
+    .setDescription("send pricelist")
+    .toJSON()
+];
 
--# _ _ _ _ _ _ _ _ _ _ _ _ _ _      <:000_1:1456193165601017868>xoxo, <@&1455613450935079110>
-_ _
-  ].join("\n"),
+const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
-  p2: [
-    // _ _ 
-_ _             ׂ <a:000_1:1456193161113374951>   𓈒  __**ρrem αvαıℓαbℓe**__   ⁺    ۪ ׂ
-_ _
-> _ _    **entertaınment**
-_ _      <:pearl:1483100606649602159> ` ₱25  ` <:pearl:1483100606649602159> crūnchyroll sh
-_ _      <:pearl:1483100606649602159> ` ₱35  ` <:pearl:1483100606649602159> crūnchyroll sl
-
-> _ _    **educatıonal**
-_ _      <:pearl:1483100606649602159> ` ₱30  ` <:pearl:1483100606649602159> chgpt plus 1m sh 
-_ _      <:pearl:1483100606649602159> ` ₱60  ` <:pearl:1483100606649602159> chgpt 1m sl
-_ _      <:pearl:1483100606649602159> ` ₱10  ` <:pearl:1483100606649602159> quızlet 1m sl
-_ _      <:pearl:1483100606649602159> ` ₱35  ` <:pearl:1483100606649602159> zoom 100 parti 1m
-_ _      <:pearl:1483100606649602159> ` ₱65  ` <:pearl:1483100606649602159> zoom 100 parti 2m
-_ _      <:pearl:1483100606649602159> ` ₱05  ` <:pearl:1483100606649602159> ms365 [via invite](https://discord.com/channels/1455613450935079109/1455613451903832275) 1m
-_ _      <:pearl:1483100606649602159> ` ₱10  ` <:pearl:1483100606649602159> ms365 famhead 1m
-_ _      <:pearl:1483100606649602159> ` ₱10  ` <:pearl:1483100606649602159> grāmmārly sh 1m
-_ _      <:pearl:1483100606649602159> ` ₱30  ` <:pearl:1483100606649602159> grāmmārly sl 1m
-
-> _ _    **edıtıng**
-_ _      <:pearl:1485552109410713611> ` ₱02  ` <:pearl:1483100606649602159> canba [invite](https://discord.com/channels/1455613450935079109/1455613451903832275) 1m
-_ _      <:pearl:1485552109410713611> ` ₱05  ` <:pearl:1483100606649602159> canba personal 1m
-_ _      <:pearl:1485552109410713611> ` ₱10  ` <:pearl:1483100606649602159> canba head 1m
-_ _      <:pearl:1485552109410713611> ` ₱05  ` <:pearl:1483100606649602159> pıcsart sh 1m
-_ _      <:pearl:1485552109410713611> ` ₱10  ` <:pearl:1483100606649602159> picsart sl 1m
-_ _      <:pearl:1485552109410713611> ` ₱30  ` <:pearl:1483100606649602159> scrl sl 7d
-_ _      <:pearl:1485552109410713611> ` ₱60  ` <:pearl:1483100606649602159> scrl sl 1m
-_ _      <:pearl:1485552109410713611> ` ₱    ` <:pearl:1483100606649602159> [paid apps](https://discord.com/channels/1455613450935079109/1455615165834727496)
-_ _
--# _ _                  <:000_1:1456193165601017868>xoxo,  <@&1455613450935079110> 
-_ _
-  ].join("\n"),
-
-  p3: [
-    // _ _
-_ _                ׂ   <a:000_1:1456193161113374951>   𓈒   **dc αged αccs** ⁺    ۪ ׂ
-
-_ _           __αccount year__                     __our prιce__
-_ _       <:pearl:1483100606649602159> ` 2026  `         <:pearl:1483100606649602159>        ` ₱ 30   `
-_ _       <:pearl:1483100606649602159> ` 2025  `         <:pearl:1483100606649602159>        ` ₱ 45   `
-_ _       <:pearl:1483100606649602159> ` 2024  `         <:pearl:1483100606649602159>        ` ₱ 55   `
-_ _       <:pearl:1483100606649602159> ` 2022  `         <:pearl:1483100606649602159>        ` ₱ 75   `
-_ _       <:pearl:1483100606649602159> ` 2021  `         <:pearl:1483100606649602159>        ` ₱ 95   `
-_ _       <:pearl:1483100606649602159> ` 2020  `         <:pearl:1483100606649602159>        ` ₱ 105  `
-_ _       <:pearl:1483100606649602159> ` 2019  `         <:pearl:1483100606649602159>        ` ₱ 120  `
-_ _       <:pearl:1483100606649602159> ` 2018  `         <:pearl:1483100606649602159>        ` ₱ 145  `
-_ _       <:pearl:1483100606649602159> ` 2017  `         <:pearl:1483100606649602159>        ` ₱ 200  `
-_ _       <:pearl:1483100606649602159> ` 2016  `         <:pearl:1483100606649602159>        ` ₱ 500  `
-_ _       <:pearl:1483100606649602159> ` 2015  `         <:pearl:1483100606649602159>        ` ₱ 3240 `
-
-> -# _ _  <:pearl:1483100606649602159>  within the day  /  mins  —  hours process
-> -# _ _  <:pearl:1483100606649602159>  we recommend  changing  the email and
-> -# _ _   <:bend1:1485543789488508980> password  associating  with the account
-> -# _ _   <:bend1:1485543789488508980> after purchase  but changing  it will void
-> -# _ _   <:bend1:1485543789488508980> your **warranty ** &  i will no longer be liable
-> -# _ _   <:bend1:1485543789488508980> for  any  issues or error  that  arise  after
-_ _
-> -# _ _                    <:000_1:1456193165601017868>xoxo, <@&1455613450935079110> 
-_ _
-  ].join("\n"),
-
-  p4: [
-    // _ _
-_ _              ׂ  <a:000_1:1456193161113374951>   𓈒 **ძekors vıα logın** ⁺    ۪ ׂ
-
-_ _         __with nıtro__                         __without nıtro__
-<:pearl:1483100606649602159>` ₱ 209` : ` ₱  70`    <:pearl:1483100606649602159>` ₱ 250` : ` ₱  85`
-<:pearl:1485552109410713611>` ₱ 250` : ` ₱  80`    <:pearl:1483100606649602159>` ₱ 339` : ` ₱ 130`
-<:pearl:1483100606649602159>` ₱ 295` : ` ₱  90`    <:pearl:1483100606649602159>` ₱ 380` : ` ₱ 160`
-<:pearl:1483100606649602159>` ₱ 339` : ` ₱ 115`    <:pearl:1483100606649602159>` ₱ 440` : ` ₱ 215`
-<:pearl:1483100606649602159>` ₱ 359` : ` ₱ 135`    <:pearl:1483100606649602159>` ₱ 459` : ` ₱ 255`
-<:pearl:1483100606649602159>` ₱ 380` : ` ₱ 165`    <:pearl:1483100606649602159>` ₱ 475` : ` ₱ 245`
-<:pearl:1483100606649602159>` ₱ 425` : ` ₱ 213`    <:pearl:1483100606649602159>` ₱ 539` : ` ₱ 270`
-<:pearl:1483100606649602159>` ₱ 459` : ` ₱ 247`    <:pearl:1483100606649602159>` ₱    ` : ` ₱ 340`
-_ _
-> -# <:pearl:1483100606649602159> legally paid. within the day / mins proc
-> -#  <:pearl:1483100606649602159> need email, password, 3 backup codes
-> -#  <:pearl:1483100606649602159> strictly  no  back  up  codes no process
-_ _
--# _ _                      <:000_1:1456193165601017868>xoxo, <@&1455613450935079110> 
-_ _
-  ].join("\n"),
-
-  p5: [
-    // _ _
-_ _       ׂ  <a:000_1:1456193161113374951>   𓈒  **dekors vıα gıftlınk** ⁺    ۪ ׂ
-_ _
--# _ _ _ _ _ _ _ _ _ _ _ _         **__dc prıce__** _ _ _ _ <:pearl:1483100606649602159> _ _  **__our prıce__**
-
-_ _ _ _ _ _ _ _          `  209  `  <:pearl:1483100606649602159>  ` ₱95  `
-_ _ _ _ _ _ _ _          `  250  `  <:pearl:1483100606649602159>  ` ₱135 `
-_ _ _ _ _ _ _ _          `  295  `  <:pearl:1483100606649602159>  ` ₱165 `
-_ _ _ _ _ _ _ _          `  339  `  <:pearl:1483100606649602159>  ` ₱185 `
-_ _ _ _ _ _ _ _          `  359  `  <:pearl:1483100606649602159>  ` ₱195 `
-_ _ _ _ _ _ _ _          `  380  `  <:pearl:1483100606649602159>  ` ₱173 `
-_ _ _ _ _ _ _ _          `  425  `  <:pearl:1483100606649602159>  ` ₱245 `
-_ _ _ _ _ _ _ _          `  449  `  <:pearl:1483100606649602159>  ` ₱255 `
-
-> -# _ _          <:pearl:1483100606649602159> legally paid — full warranty
-> -# _ _          <:pearl:1483100606649602159>every    **10:00 PM**   process
-> -# _ _          <:bend1:1485543789488508980> and   drop   or   0 – 1d   max
-> -# _ _          <:pearl:1483100606649602159> legally paid — full warranty
-> -# _ _          <:pearl:1483100606649602159> unli regen link—need vouch
-> -# _ _          <:pearl:1483100606649602159> via gift link. can  gift others
-_ _
--#   _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <:000_1:1456193165601017868>xoxo, <@&1455613450935079110> 
-_ _
-  ].join("\n"),
-
-  p6: [
-    // _ _
-_ _         ׂ  <a:000_1:1456193161113374951>   𓈒  **one m. srver boozt** ⁺    ۪ ׂ
-
-_ _ _ _ _ _ _ _          `  ₱35  `  <:pearl:1483100606649602159>  2x boozt
-_ _ _ _ _ _ _ _          `  ₱60  `  <:pearl:1483100606649602159>  4x boozt
-_ _ _ _ _ _ _ _          `  ₱85  `  <:pearl:1483100606649602159>  6x boozt
-_ _ _ _ _ _ _ _          `  ₱110 `  <:pearl:1483100606649602159>  8x boozt
-_ _ _ _ _ _ _ _          `  ₱135 `  <:pearl:1483100606649602159>  10x boozt
-_ _ _ _ _ _ _ _          `  ₱160 `  <:pearl:1483100606649602159>  12x boozt
-_ _ _ _ _ _ _ _          `  ₱185 `  <:pearl:1483100606649602159>  14x boozt
-
-> -# _ _         <:pearl:1483100606649602159> via outh bo0sting.  
-> -# _ _         <:pearl:1483100606649602159> permanent  invite  link needed
-> -# _ _         <:pearl:1483100606649602159> within the day / mins-hrs proc
-> -# _ _         <:pearl:1483100606649602159> onboarding  and  anti raid bots 
-> -# _ _         <:bend1:1485543789488508980> must     be     turned     off. 
-> -# _ _         <:pearl:1483100606649602159> no rep  if u  kick  boosting bots 
-> -# _ _         <:pearl:1483100606649602159> no refunds for  rev.ked  t0kens
-> -# _ _         <:pearl:1483100606649602159> ultra high quality  tokens used
-
--#   _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _      <:000_1:1456193165601017868>xoxo, <@&1455613450935079110> 
-_ _
-  ].join("\n"),
-
-  p7: [
-    // _ _
-_ _       ׂ  <a:000_1:1456193161113374951>   𓈒  **three m. srver boozt** ⁺    ۪ ׂ
-
-_ _ _ _ _ _ _ _         `  ₱85  `  <:pearl:1483100606649602159>  2x boozt
-_ _ _ _ _ _ _ _         `  ₱165 `  <:pearl:1483100606649602159>  4x boozt
-_ _ _ _ _ _ _ _         `  ₱240 `  <:pearl:1483100606649602159>  6x boozt
-_ _ _ _ _ _ _ _         `  ₱315 `  <:pearl:1483100606649602159>  8x boozt
-_ _ _ _ _ _ _ _         `  ₱385 `  <:pearl:1483100606649602159>  10x boozt
-_ _ _ _ _ _ _ _         `  ₱465 `  <:pearl:1483100606649602159>  12x boozt
-_ _ _ _ _ _ _ _         `  ₱535 `  <:pearl:1483100606649602159>  14x boozt
-
-> -# _ _   <:pearl:1483100606649602159> via outh bo0sting.  
-> -# _ _   <:pearl:1483100606649602159> permanent  invite  link needed
-> -# _ _   <:pearl:1483100606649602159> within the day / mins-hrs proc
-> -# _ _   <:pearl:1483100606649602159> onboarding  and  anti raid bots 
-> -# _ _   <:bend1:1485543789488508980> must     be     turned     off. 
-> -# _ _   <:pearl:1483100606649602159> no rep  if u  kick  boosting bots 
-> -# _ _   <:pearl:1483100606649602159> no refunds for  rev.ked  t0kens
-> -# _ _   <:pearl:1483100606649602159> ultra high quality  tokens used
-_ _
--#   _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _    <:000_1:1456193165601017868>xoxo, <@&1455613450935079110> 
-_ _
-  ].join("\n"),
-
-  p8: [
-    // _ _
-_ _                 ׂ  <a:000_1:1456193161113374951>   𓈒 **member boozt** ⁺    ۪
-
-_ _              **offline**             <:pearl:1483100606649602159>             **online**
-
-<:pearl:1483100606649602159> ` 100  ` : ` ₱10 ` <:pearl:1483100606649602159> _ _` 100  ` : ` ₱15 `
-<:pearl:1483100606649602159> ` 200  ` : ` ₱15 ` <:pearl:1483100606649602159> _ _` 200  ` : ` ₱25 `
-<:pearl:1483100606649602159> ` 300  ` : ` ₱20 ` <:pearl:1483100606649602159> _ _` 300  ` : ` ₱35 ` 
-<:pearl:1483100606649602159> ` 400  ` : ` ₱15 ` <:pearl:1483100606649602159> _ _` 400  ` : ` ₱50 `
-<:pearl:1483100606649602159> ` 500  ` : ` ₱25 ` <:pearl:1483100606649602159> _ _` 500  ` : ` ₱60 `
-<:pearl:1483100606649602159> ` 600  ` : ` ₱35 ` <:pearl:1483100606649602159> _ _` 600  ` : ` ₱75 `
-<:pearl:1483100606649602159> ` 700  ` : ` ₱45 ` <:pearl:1483100606649602159> _ _` 700  ` : ` ₱85 `
-<:pearl:1483100606649602159> ` 800  ` : ` ₱55 ` <:pearl:1483100606649602159> _ _` 800  ` : ` ₱95 `
-<:pearl:1483100606649602159> ` 900  ` : ` ₱70 ` <:pearl:1483100606649602159> _ _` 900  ` : ` ₱110`
-<:pearl:1483100606649602159> ` 1000 ` : ` ₱90 ` <:pearl:1483100606649602159> _ _` 1000 ` : ` ₱120`
-_ _
-> -# _ _ <:pearl:1483100606649602159> botted members (generated using
-> -# _ _ <:bend1:1485543789488508980> automated   tools    with   captcha
-> -# _ _ <:bend1:1485543789488508980> solvers)     added     with     a      bot
-> -# _ _ <:pearl:1483100606649602159> disable   any   anti    raid   bot   and
-> -# _ _ <:bend1:1485543789488508980> onboarding from your server.
-> -# _ _ <:pearl:1483100606649602159> our  online  members   stay   active
-> -# _ _ <:bend1:1485543789488508980> 24/7  for  a  lifetime, unless termed
-> -# _ _ <:bend1:1485543789488508980> by discord.
-> -# _ _ <:pearl:1483100606649602159> no refunds/replacements  for t3rm
-> -# _ _ <:bend1:1485543789488508980> wave    or    banned/kicked   tokens.
-> -# _ _ <:pearl:1483100606649602159> replacements   or   refunds   only  if
-> -# _ _ <:bend1:1485543789488508980> issues are on our side.
-> -# _ _ <:pearl:1483100606649602159> it is your responsibility to check the
-> -# _ _ <:bend1:1485543789488508980> server failed boozt = no replacement
-_ _
--# _ _ _ _                     <:000_1:1456193165601017868>xoxo, <@&1455613450935079110> 
-_ _
-  ].join("\n"),
-};
-
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
-  if (!message.content.startsWith(PREFIX)) return;
-  if (message.author.id !== OWNER_ID) return;
-
-  const cmd = message.content.slice(PREFIX.length).toLowerCase();
-
-  if (!prices[cmd]) return;
-
+(async () => {
   try {
-    await message.delete();
-  } catch {}
-
-  await message.channel.send(prices[cmd]);
-});
+    await rest.put(
+      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+      { body: commands }
+    );
+    console.log("Command /p registered.");
+  } catch (error) {
+    console.error(error);
+  }
+})();
 
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
+});
+
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+  if (interaction.commandName !== "p") return;
+
+  await interaction.deferReply({ ephemeral: true });
+
+  for (const item of pricelists) {
+    await interaction.channel.send(build(item.title, item.body, item.footer));
+    await wait(1500);
+  }
+
+  await interaction.deleteReply();
 });
 
 client.login(process.env.TOKEN);
