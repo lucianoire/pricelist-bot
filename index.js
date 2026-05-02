@@ -18,15 +18,10 @@ const client = new Client({
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// 🔥 style (no line sa title, line sa end lang)
 function buildMessage(title, body, footer) {
   const components = [
     new TextDisplayBuilder().setContent(title),
-
-    // real gray line
-    new SeparatorBuilder()
-      .setDivider(true)
-      .setSpacing(SeparatorSpacingSize.Small),
-
     new TextDisplayBuilder().setContent(body)
   ];
 
@@ -49,18 +44,15 @@ function buildMessage(title, body, footer) {
 client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
 
-  // clear old commands like /p
-  await client.application.commands.set([]);
-
-  // register /pl
+  // 🔥 IMPORTANT: use GUILD ONLY para walang duplicate
   await client.application.commands.set([
     new SlashCommandBuilder()
       .setName("pl")
       .setDescription("send pricelist")
       .toJSON()
-  ]);
+  ], process.env.GUILD_ID);
 
-  console.log("Command /pl registered.");
+  console.log("Command /pl registered (guild only).");
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -68,7 +60,6 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.commandName !== "pl") return;
 
   try {
-    // hidden reply para hindi mag-timeout
     await interaction.deferReply({ ephemeral: true });
 
     for (const item of pricelists) {
@@ -80,6 +71,7 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     await interaction.deleteReply();
+
   } catch (error) {
     console.error(error);
 
