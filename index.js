@@ -7,9 +7,7 @@ const {
   TextDisplayBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
-  SlashCommandBuilder,
-  REST,
-  Routes
+  SlashCommandBuilder
 } = require("discord.js");
 
 const { pricelists } = require("./pricelists");
@@ -18,14 +16,17 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function build(title, body, footer) {
+function buildMessage(title, body, footer) {
   const components = [
     new TextDisplayBuilder().setContent(title),
+
+    // real gray line
     new SeparatorBuilder()
       .setDivider(true)
       .setSpacing(SeparatorSpacingSize.Small),
+
     new TextDisplayBuilder().setContent(body)
   ];
 
@@ -34,6 +35,7 @@ function build(title, body, footer) {
       new SeparatorBuilder()
         .setDivider(true)
         .setSpacing(SeparatorSpacingSize.Small),
+
       new TextDisplayBuilder().setContent(footer)
     );
   }
@@ -44,43 +46,50 @@ function build(title, body, footer) {
   };
 }
 
-const commands = [
-  new SlashCommandBuilder()
-    .setName("pl")
-    .setDescription("send pricelist")
-    .toJSON()
-];
-
-const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
-
-(async () => {
-  try {
-    await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-      { body: commands }
-    );
-    console.log("Command /p registered.");
-  } catch (error) {
-    console.error(error);
-  }
-})();
-
-client.once("ready", () => {
+client.once("ready", async () => {
   console.log(`Logged in as ${client.user.tag}`);
+
+  // clear old commands like /p
+  await client.application.commands.set([]);
+
+  // register /pl
+  await client.application.commands.set([
+    new SlashCommandBuilder()
+      .setName("pl")
+      .setDescription("send pricelist")
+      .toJSON()
+  ]);
+
+  console.log("Command /pl registered.");
 });
 
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
-  if (interaction.commandName !== "p") return;
+  if (interaction.commandName !== "pl") return;
 
-  await interaction.deferReply({ ephemeral: true });
+  try {
+    // hidden reply para hindi mag-timeout
+    await interaction.deferReply({ ephemeral: true });
 
-  for (const item of pricelists) {
-    await interaction.channel.send(build(item.title, item.body, item.footer));
-    await wait(1500);
+    for (const item of pricelists) {
+      await interaction.channel.send(
+        buildMessage(item.title, item.body, item.footer)
+      );
+
+      await wait(1500);
+    }
+
+    await interaction.deleteReply();
+  } catch (error) {
+    console.error(error);
+
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: "May error sa bot.",
+        ephemeral: true
+      });
+    }
   }
-
-  await interaction.deleteReply();
 });
 
 client.login(process.env.TOKEN);
