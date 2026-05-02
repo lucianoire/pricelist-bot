@@ -11,7 +11,7 @@ const client = new Client({
 });
 
 const PREFIX = ",";
-const OWNER_ID = "ILAGAY_USER_ID_MO";
+const OWNER_ID = "1330573713346920533";
 
 const prices = {
   p1: `_ _
