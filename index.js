@@ -46,7 +46,7 @@ function build(title, body, footer) {
 
 const commands = [
   new SlashCommandBuilder()
-    .setName("p")
+    .setName("pl")
     .setDescription("send pricelist")
     .toJSON()
 ];
